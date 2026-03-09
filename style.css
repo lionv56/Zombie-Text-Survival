@@ -1,0 +1,106 @@
+body {
+    background: #111;
+    color: #eee;
+    font-family: monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+#game {
+    width: min(760px, 94vw);
+    height: 92vh;
+    background: #1b1b1b;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.65);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #2d2d2d;
+}
+
+#stats {
+    margin-bottom: 10px;
+    color: #b7d7b7;
+    white-space: pre-wrap;
+    line-height: 1.4;
+    font-size: 14px;
+}
+
+#text {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    white-space: pre-line;
+    border: 1px solid #303030;
+    background: #141414;
+    border-radius: 8px;
+    padding: 10px;
+    line-height: 1.5;
+}
+
+#choices {
+    max-height: 240px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    border: 1px solid #303030;
+    background: #161616;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+#inventory {
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid #303030;
+    background: #151515;
+    border-radius: 8px;
+    padding: 8px;
+    line-height: 1.5;
+}
+
+.inventory-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #242424;
+}
+
+.inventory-label {
+    flex: 1 1 220px;
+    color: #d7f0d7;
+}
+
+button {
+    display: block;
+    width: 100%;
+    margin: 4px 0;
+    padding: 9px 10px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+}
+
+button:hover {
+    background: #555;
+}
+
+.inventory-row button {
+    width: auto;
+    margin: 0;
+    padding: 6px 10px;
+}
+
+.small-note {
+    color: #9f9f9f;
+    font-size: 13px;
+}

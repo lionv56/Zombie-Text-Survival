@@ -1,6 +1,25 @@
 const player = {
     hp: 100,
-    maxWeight: 20,
-    inventory: []
+    maxHp: 100,
+
+    stamina: 10,
+    maxStamina: 10,
+
+    hunger: 100,
+    thirst: 100,
+
+    inventory: [],
+    maxWeight: 30,
+
+    skills: {
+        level: 1,
+        xp: 0
+    },
+
+    armor: null,
+    visitedRooms: {}
 };
+
 let currentRoom = null;
+let combatState = null;
+let gameStarted = false;
