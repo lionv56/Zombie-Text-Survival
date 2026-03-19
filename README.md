@@ -126,28 +126,6 @@ Dit vereist materialen zoals:
 
 ---
 
-## Bestandsstructuur
-
-/projectmap
-├─ index.html
-├─ css/style.css
-└─ js/
-├─ main.js
-├─ player.js
-├─ items.js
-├─ rooms.js
-├─ loot.js
-├─ inventory.js
-├─ combat.js
-├─ zombies.js
-├─ survival.js
-├─ crafting.js
-├─ armor.js
-├─ skills.js
-└─ save.js
-
----
-
 ## Installatie
 
 1. Download of clone het project
