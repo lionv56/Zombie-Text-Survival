@@ -85,18 +85,36 @@ function removeItem(key, qty = 1) {
 }
 
 function dropItem(index) {
+    if (player.inTutorial && tutorialMode !== "sandbox") {
+        write("Tijdens deze tutorial kun je nog geen items droppen.");
+        return;
+    }
+
     const slot = player.inventory[index];
     if (!slot || !currentRoom) return;
 
     currentRoom.ground.push({ ...slot });
     player.inventory.splice(index, 1);
 
-    addLog(`${items[slot.key].name} gedropt.`);
+    if (typeof addLog === "function" && !player.inTutorial) {
+        addLog(`${items[slot.key].name} gedropt.`);
+    }
+
     updateInventory();
-    showRoom(currentRoom.key);
+
+    if (player.inTutorial && tutorialMode === "sandbox" && currentRoom.key.startsWith("tutorial_")) {
+        showTutorialSandboxRoom(currentRoom.key);
+    } else {
+        showRoom(currentRoom.key);
+    }
 }
 
 function useItem(index) {
+    if (player.inTutorial && tutorialMode !== "sandbox") {
+        write("Tijdens deze tutorial kun je nog geen items gebruiken.");
+        return;
+    }
+
     const slot = player.inventory[index];
     if (!slot) return;
 
@@ -141,6 +159,11 @@ function useItem(index) {
 }
 
 function equipArmorFromInventory(index) {
+    if (player.inTutorial && tutorialMode !== "sandbox") {
+        write("Tijdens deze tutorial kun je nog geen armor equippen.");
+        return;
+    }
+
     const slot = player.inventory[index];
     if (!slot) return;
 
@@ -211,25 +234,29 @@ function updateInventory() {
         label.innerText = getInventoryLabel(slot);
         row.appendChild(label);
 
-        const canUse = item.heal || item.hungerRestore || item.thirstRestore;
-        if (canUse) {
-            const useBtn = document.createElement("button");
-            useBtn.innerText = "Gebruik";
-            useBtn.onclick = () => useItem(i);
-            row.appendChild(useBtn);
-        }
+        const controlsAllowed = !player.inTutorial || tutorialMode === "sandbox";
 
-        if (item.type === "armor") {
-            const equipBtn = document.createElement("button");
-            equipBtn.innerText = "Equip";
-            equipBtn.onclick = () => equipArmorFromInventory(i);
-            row.appendChild(equipBtn);
-        }
+        if (controlsAllowed) {
+            const canUse = item.heal || item.hungerRestore || item.thirstRestore;
+            if (canUse) {
+                const useBtn = document.createElement("button");
+                useBtn.innerText = "Gebruik";
+                useBtn.onclick = () => useItem(i);
+                row.appendChild(useBtn);
+            }
 
-        const dropBtn = document.createElement("button");
-        dropBtn.innerText = "Drop";
-        dropBtn.onclick = () => dropItem(i);
-        row.appendChild(dropBtn);
+            if (item.type === "armor") {
+                const equipBtn = document.createElement("button");
+                equipBtn.innerText = "Equip";
+                equipBtn.onclick = () => equipArmorFromInventory(i);
+                row.appendChild(equipBtn);
+            }
+
+            const dropBtn = document.createElement("button");
+            dropBtn.innerText = "Drop";
+            dropBtn.onclick = () => dropItem(i);
+            row.appendChild(dropBtn);
+        }
 
         invEl.appendChild(row);
     });

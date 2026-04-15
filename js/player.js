@@ -17,9 +17,14 @@ const player = {
     },
 
     armor: null,
-    visitedRooms: {}
+    visitedRooms: {},
+
+    tutorialSeen: false,
+    tutorialStep: 0,
+    inTutorial: false
 };
 
 let currentRoom = null;
 let combatState = null;
 let gameStarted = false;
+let tutorialMode = null;

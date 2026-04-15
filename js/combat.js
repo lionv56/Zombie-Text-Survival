@@ -11,6 +11,12 @@ function clearLog() {
     renderText();
 }
 
+function isDummyCombat() {
+    return player.inTutorial &&
+           combatState &&
+           combatState.zombies.some(z => z.tutorial);
+}
+
 function startCombat(zombies) {
     combatState = {
         zombies,
@@ -63,8 +69,10 @@ function showCombatItemMenu() {
         btn.innerText = getInventoryLabel(slot);
         btn.onclick = () => {
             useItem(index);
-            if (combatState && player.hp > 0) {
+            if (combatState && player.hp > 0 && !isDummyCombat()) {
                 enemiesAttack();
+            } else if (combatState) {
+                showCombatMenu();
             }
         };
         choicesEl.appendChild(btn);
@@ -138,6 +146,13 @@ function damageWeapon(slot) {
 function fleeCombat() {
     if (!combatState) return;
 
+    if (isDummyCombat()) {
+        write("Dummy combat verlaten.");
+        combatState = null;
+        showTutorialSandboxRoom("tutorial_combat");
+        return;
+    }
+
     const fleeChance = 0.45 + (player.skills.level * 0.03);
     if (Math.random() <= fleeChance) {
         addLog("Je weet te ontsnappen.");
@@ -152,6 +167,10 @@ function fleeCombat() {
 
 function enemiesAttack() {
     if (!combatState) return;
+    if (isDummyCombat()) {
+        showCombatMenu();
+        return;
+    }
 
     combatState.zombies.forEach(z => {
         const raw = rand(z.damage[0], z.damage[1]);
@@ -185,6 +204,7 @@ function attackZombie(zIndex, slot) {
         return;
     }
 
+    const dummy = isDummyCombat();
     let damage = 0;
     let staminaCost = 2;
 
@@ -198,7 +218,12 @@ function attackZombie(zIndex, slot) {
     if (Math.random() < 0.15) {
         addLog("Je mist!");
         updateStats();
-        enemiesAttack();
+
+        if (!dummy) {
+            enemiesAttack();
+        } else {
+            showCombatMenu();
+        }
         return;
     }
 
@@ -211,7 +236,7 @@ function attackZombie(zIndex, slot) {
             return;
         }
 
-        if (weapon.ammoType) {
+        if (weapon.ammoType && !dummy) {
             if (getItemQty(weapon.ammoType) <= 0) {
                 addLog("Geen ammo!");
                 showCombatMenu();
@@ -227,7 +252,11 @@ function attackZombie(zIndex, slot) {
         }
 
         zombie.hp -= damage;
-        damageWeapon(slot);
+
+        if (!dummy) {
+            damageWeapon(slot);
+        }
+
         addLog(`${weapon.name} doet ${damage} damage.`);
     } else {
         damage = rand(1, 3) + getDamageBonus();
@@ -237,13 +266,16 @@ function attackZombie(zIndex, slot) {
 
     if (zombie.hp <= 0) {
         addLog(`${zombie.name} sterft.`);
-        addXP(zombie.xp);
         combatState.zombies.splice(zIndex, 1);
 
-        if (Math.random() < 0.40) {
-            const lootDrop = Math.random() < 0.5 ? "cloth" : "scrap";
-            addItem(lootDrop, 1);
-            addLog(`Je vindt ${items[lootDrop].name}.`);
+        if (!dummy) {
+            addXP(zombie.xp);
+
+            if (Math.random() < 0.40) {
+                const lootDrop = Math.random() < 0.5 ? "cloth" : "scrap";
+                addItem(lootDrop, 1);
+                addLog(`Je vindt ${items[lootDrop].name}.`);
+            }
         }
     }
 
@@ -251,11 +283,21 @@ function attackZombie(zIndex, slot) {
     updateInventory();
 
     if (combatState.zombies.length === 0) {
-        write("Alle zombies verslagen!");
         combatState = null;
-        showRoom(currentRoom.key);
+
+        if (dummy) {
+            write("Dummy combat klaar. Je hebt combat geoefend.");
+            showTutorialSandboxRoom("tutorial_combat");
+        } else {
+            write("Alle zombies verslagen!");
+            showRoom(currentRoom.key);
+        }
         return;
     }
 
-    enemiesAttack();
+    if (!dummy) {
+        enemiesAttack();
+    } else {
+        showCombatMenu();
+    }
 }

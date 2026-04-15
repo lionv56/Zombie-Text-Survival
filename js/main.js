@@ -13,7 +13,7 @@ function write(text) {
 function renderText() {
     const parts = [screenText];
 
-    if (log.length > 0) {
+    if (typeof log !== "undefined" && log.length > 0 && !player.inTutorial) {
         parts.push("", "---- LOG ----", ...log);
     }
 
@@ -26,11 +26,13 @@ function updateStats() {
         ? `${items[player.armor.key].name} (${player.armor.hp}hp)`
         : "geen";
 
+    const tutorialText = player.inTutorial ? "\nMODE: Tutorial" : "";
+
     statsEl.innerText =
 `HP: ${player.hp}/${player.maxHp} | STA: ${player.stamina}/${player.maxStamina}
 HUN: ${player.hunger}/100 | THI: ${player.thirst}/100
 LVL: ${player.skills.level} | XP: ${player.skills.xp}/20
-Armor: ${armorText}`;
+Armor: ${armorText}${tutorialText}`;
 }
 
 function makeButton(label, onClick) {
@@ -45,24 +47,24 @@ function restInRoom() {
     player.hunger = Math.max(0, player.hunger - 1);
     player.thirst = Math.max(0, player.thirst - 1);
 
-    write("Je rust even uit. Je stamina herstelt een beetje.");
+    write("Je rust even uit en herstelt stamina.");
     updateStats();
 }
 
 function scavengeRoom() {
-    if (!currentRoom) return;
+    if (!currentRoom || player.inTutorial) return;
 
     const chance = currentRoom.visitedScavenge ? 0.20 : 0.60;
     currentRoom.visitedScavenge = true;
 
     if (Math.random() > chance) {
-        write("Je zoekt grondig, maar vindt niets bruikbaars.");
+        write("Je zoekt rond, maar vindt niets bruikbaars.");
         return;
     }
 
     const table = lootTables[currentRoom.lootProfile] || [];
     if (table.length === 0) {
-        write("Hier lijkt niets meer te liggen.");
+        write("Hier ligt niets bruikbaars.");
         return;
     }
 
@@ -70,11 +72,13 @@ function scavengeRoom() {
     const qty = rand(picked.min, picked.max);
     addGeneratedDrop(currentRoom, picked.key, qty);
 
-    write(`Je vindt iets bruikbaars: ${items[picked.key].name}.`);
+    write(`Je vindt ${items[picked.key].name}.`);
     showRoom(currentRoom.key);
 }
 
 function pickupGroundItem(index) {
+    if (player.inTutorial) return;
+
     const slot = currentRoom.ground[index];
     if (!slot) return;
 
@@ -88,12 +92,121 @@ function pickupGroundItem(index) {
 
     if (success) {
         currentRoom.ground.splice(index, 1);
-        addLog(`${items[slot.key].name} opgepakt.`);
+
+        if (typeof addLog === "function") {
+            addLog(`${items[slot.key].name} opgepakt.`);
+        }
+
         showRoom(currentRoom.key);
     }
 }
 
+function startTutorialSlides() {
+    player.tutorialSeen = true;
+    player.tutorialStep = 1;
+    player.inTutorial = true;
+    showTutorialStep();
+    updateInventory();
+}
+
+function showTutorialStep() {
+    choicesEl.innerHTML = "";
+
+    if (player.tutorialStep === 1) {
+        write(
+`Tutorial
+
+Welkom in Zombie Text Survival.
+
+Je gaat nu eerst een korte uitleg krijgen.
+Daarna kun je kiezen voor een oefen-tutorial waarin je alles veilig kunt testen.
+
+Stats:
+HP = health
+STA = stamina
+HUN = hunger
+THI = thirst
+LVL = level`
+        );
+
+        choicesEl.appendChild(
+            makeButton("Volgende", () => {
+                player.tutorialStep = 2;
+                showTutorialStep();
+            })
+        );
+        return;
+    }
+
+    if (player.tutorialStep === 2) {
+        write(
+`Tutorial
+
+Belangrijke acties:
+- Zoek rond = veilig zoeken naar loot
+- Zoek rond (gevaar) = kans op zombies
+- Rust = stamina herstellen
+- Crafting = items maken
+- Save / Load = spel opslaan of laden`
+        );
+
+        choicesEl.appendChild(
+            makeButton("Vorige", () => {
+                player.tutorialStep = 1;
+                showTutorialStep();
+            })
+        );
+
+        choicesEl.appendChild(
+            makeButton("Volgende", () => {
+                player.tutorialStep = 3;
+                showTutorialStep();
+            })
+        );
+        return;
+    }
+
+    if (player.tutorialStep === 3) {
+        write(
+`Tutorial
+
+Je kunt nu kiezen:
+
+1. Direct de echte game starten
+2. Eerst een dummy tutorial spelen waarin je alles veilig oefent
+
+Tijdens die dummy tutorial:
+- verlies je geen stats
+- krijg je geen echte schade
+- verbruik je je echte items niet`
+        );
+
+        choicesEl.appendChild(
+            makeButton("Vorige", () => {
+                player.tutorialStep = 2;
+                showTutorialStep();
+            })
+        );
+
+        choicesEl.appendChild(
+            makeButton("Start echte game", () => {
+                player.inTutorial = false;
+                player.tutorialStep = 0;
+                showRoom("street");
+            })
+        );
+
+        choicesEl.appendChild(
+            makeButton("Start dummy tutorial", () => {
+                startDummyTutorial();
+            })
+        );
+    }
+}
+
 function showRoom(key) {
+    if (player.inTutorial) return;
+
     const room = rooms[key];
     currentRoom = room;
 
@@ -126,6 +239,14 @@ function showRoom(key) {
 
     choicesEl.appendChild(
         makeButton("Crafting", () => showCraftingMenu())
+    );
+
+    choicesEl.appendChild(
+        makeButton("Tutorial", () => startTutorialSlides())
+    );
+
+    choicesEl.appendChild(
+        makeButton("Dummy tutorial", () => startDummyTutorial())
     );
 
     choicesEl.appendChild(
@@ -165,7 +286,12 @@ function startGame() {
     gameStarted = true;
     updateStats();
     updateInventory();
-    showRoom("street");
+
+    if (!player.tutorialSeen) {
+        startTutorialSlides();
+    } else {
+        showRoom("street");
+    }
 }
 
 window.onload = startGame;
